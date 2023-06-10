@@ -2,13 +2,14 @@ import math
 
 
 class BPA_pixel:
-    def __init__(self, x, y, r, g, b, message):
+    def __init__(self, label, x, y, r, g, b, message_sum):
+        self.label = label
         self.x = x
         self.y = y
         self.r = r
         self.g = g
         self.b = b
-        self.message = message  # list of messages for all neighbouring pixels (use clockwise encoding, so 1 = up, 2 = right, etc.)
+        self.message_sum = message_sum  # list of messages for all neighbouring pixels (use clockwise encoding, so 1 = up, 2 = right, etc.)
         #self.mean = mean  # TODO: is the mean of all features meant here (so including colors and xy coords?) --> i will do so here but as Prof. Deinzer SOON
         #self.standard_deviation = standard_deviation  # TODO: same as with mean?
 
@@ -19,7 +20,7 @@ class BPA_pixel:
         new_g = self.g - other.g
         new_b = self.b - other.b
 
-        return BPA_pixel(new_x, new_y, new_r, new_g, new_b, self.message)
+        return BPA_pixel(self.label, new_x, new_y, new_r, new_g, new_b, self.message_sum)
 
     def __add__(self, other):
         new_x = self.x + other.x
@@ -28,7 +29,7 @@ class BPA_pixel:
         new_g = self.g + other.g
         new_b = self.b + other.b
 
-        return BPA_pixel(new_x, new_y, new_r, new_g, new_b, self.message)
+        return BPA_pixel(self.label, new_x, new_y, new_r, new_g, new_b, self.message_sum)
 
     def __pow__(self, exponent):
         new_x = self.x ** exponent
@@ -37,7 +38,7 @@ class BPA_pixel:
         new_g = self.g ** exponent
         new_b = self.b ** exponent
 
-        return BPA_pixel(new_x, new_y, new_r, new_g, new_b, self.message)
+        return BPA_pixel(self.label, new_x, new_y, new_r, new_g, new_b, self.message_sum)
 
 class Label:
     def __init__(self, label, r_mean, g_mean, b_mean, x_mean, y_mean, r_standard_deviation, g_standard_deviation, b_standard_deviation, x_standard_deviation, y_standard_deviation):
@@ -127,3 +128,11 @@ class Label:
 
         return Label(self.label, new_r_mean, new_g_mean, new_b_mean, new_x_mean, new_y_mean,
                      new_r_std_dev, new_g_std_dev, new_b_std_dev, new_x_std_dev, new_y_std_dev)
+
+class Message_board:
+    def __init__(self, label, pixels_sorted_by_rows_and_cols):
+        self.label = label
+        self.pixel_energy_vals = {}
+        for pixel in pixels_sorted_by_rows_and_cols:
+            self.pixel_energy_vals[str(pixel.x)+ "/" + str(pixel.y)] = 0.0
+
