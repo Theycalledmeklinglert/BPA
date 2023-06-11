@@ -2,14 +2,13 @@ import math
 
 
 class BPA_pixel:
-    def __init__(self, label, x, y, r, g, b, message_sum):
+    def __init__(self, label, x, y, r, g, b):
         self.label = label
         self.x = x
         self.y = y
         self.r = r
         self.g = g
         self.b = b
-        self.message_sum = message_sum  # list of messages for all neighbouring pixels (use clockwise encoding, so 1 = up, 2 = right, etc.)
         #self.mean = mean  # TODO: is the mean of all features meant here (so including colors and xy coords?) --> i will do so here but as Prof. Deinzer SOON
         #self.standard_deviation = standard_deviation  # TODO: same as with mean?
 
@@ -20,7 +19,7 @@ class BPA_pixel:
         new_g = self.g - other.g
         new_b = self.b - other.b
 
-        return BPA_pixel(self.label, new_x, new_y, new_r, new_g, new_b, self.message_sum)
+        return BPA_pixel(self.label, new_x, new_y, new_r, new_g, new_b)
 
     def __add__(self, other):
         new_x = self.x + other.x
@@ -29,7 +28,7 @@ class BPA_pixel:
         new_g = self.g + other.g
         new_b = self.b + other.b
 
-        return BPA_pixel(self.label, new_x, new_y, new_r, new_g, new_b, self.message_sum)
+        return BPA_pixel(self.label, new_x, new_y, new_r, new_g, new_b)
 
     def __pow__(self, exponent):
         new_x = self.x ** exponent
@@ -38,7 +37,7 @@ class BPA_pixel:
         new_g = self.g ** exponent
         new_b = self.b ** exponent
 
-        return BPA_pixel(self.label, new_x, new_y, new_r, new_g, new_b, self.message_sum)
+        return BPA_pixel(self.label, new_x, new_y, new_r, new_g, new_b)
 
 class Label:
     def __init__(self, label, r_mean, g_mean, b_mean, x_mean, y_mean, r_standard_deviation, g_standard_deviation, b_standard_deviation, x_standard_deviation, y_standard_deviation):
@@ -135,4 +134,6 @@ class Message_board:
         self.pixel_energy_vals = {}
         for pixel in pixels_sorted_by_rows_and_cols:
             self.pixel_energy_vals[str(pixel.x)+ "/" + str(pixel.y)] = 0.0
-
+        self.past_msg_sum = {}
+        for pixel in pixels_sorted_by_rows_and_cols:
+            self.past_msg_sum[str(pixel.x)+ "/" + str(pixel.y)] = 0.0
