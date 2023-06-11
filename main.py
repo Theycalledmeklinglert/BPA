@@ -58,14 +58,17 @@ def calculate_min_energy_and_assign_msgsums_to_all_boards_for_pixel(pixels_sorte
             for p in adjacent_pixels:
                 msg_vals_of_curr_pixel_for_each_label = []
                 for h in all_labels:
-                    h_board = get_board_for_label(h, msg_boards)    #race conditions might REALLY fuck me here
+                    h_board = get_board_for_label(h, msg_boards)    #"race conditions" might REALLY fuck me here
                     val = e_data_function(p, h) + e_smooth_function(h, board.label) + h_board.past_msg_sum[str(p.x) + "/" + str(p.y)]  #message_sum of messages that the adjacent pixels received in of previous iterations
                     msg_vals_of_curr_pixel_for_each_label.append(val)
                 msg_sum_for_curr_label += min(msg_vals_of_curr_pixel_for_each_label)#see 5.39
 
+            msg_sum_for_curr_label /= len(adjacent_pixels)+1 #todo:experimental change
+
             #edata_combined_with_msgs = (edata_cost + msg_sum_for_curr_label) / 2.0
 
-            board.pixel_energy_vals[str(pixel.x) + "/" + str(pixel.y)] = edata_cost + msg_sum_for_curr_label  # update of msg value of current central pixel in msg board for each label
+            #todo: experimental change
+            board.pixel_energy_vals[str(pixel.x) + "/" + str(pixel.y)] = (edata_cost + msg_sum_for_curr_label) / 2.0  # update of msg value of current central pixel in msg board for each label
             board.past_msg_sum[str(pixel.x) + "/" + str(pixel.y)] = msg_sum_for_curr_label  #todo: this might cause race condition or other unpredictable behaviour
 
 
@@ -160,7 +163,7 @@ def get_seed_pixel_labels(pixels_sorted_by_rows_and_cols):
 def main():
     # write it in a new format
     # iio.imwrite("g4g.jpg", img)
-    iterations = 2
+    iterations = 10
     img = cv2.imread("mqdefault.jpg")
     rows, cols, _ = img.shape
     global image_height
@@ -195,8 +198,8 @@ def main():
                 #todo: dont forget to save results of energy computation in msg board and assign label with smallest energy to pixel
                 calculate_min_energy_and_assign_msgsums_to_all_boards_for_pixel(pixels_sorted_by_rows_and_cols, pixel, all_labels, msg_boards)
 
-                smallest_energy = 99999999999999.0
-                best_label = -1
+                smallest_energy = 1.7976931348623157e+308
+                best_label = None
                 for board in msg_boards:
                     if board.pixel_energy_vals[str(pixel.x) + "/" + str(pixel.y)] < smallest_energy:
                         smallest_energy = board.pixel_energy_vals[str(pixel.x) + "/" + str(pixel.y)]
@@ -215,7 +218,6 @@ def main():
     yellow = [255, 255, 0]
     gray = [192, 192, 192]
     d_green = [0, 25, 51]
-
 
     segmented_image_data = []
     for sublist in pixels_sorted_by_rows_and_cols:
@@ -242,10 +244,15 @@ def main():
                 color = gray
             elif(pixel.label == 9):
                 color = black
+            elif(pixel.label is None):
+                print("Pixel: " + str(pixel.x) + "/" + str(pixel.y))
+                raise Exception("Some Pixel had no label")
             pixel_row.append(color)
         segmented_image_data.append(pixel_row)
 
     print(segmented_image_data)
+    print(len(img))
+    print(len(segmented_image_data))
     nmpy_array = np.array(segmented_image_data, dtype=np.uint8)
     #print("beginnig")
     #print(img)
