@@ -7,7 +7,7 @@ import cv2
 
 from data_structs import *
 
-c = 2.0;  # c for Potts model for esmooth
+c = 1000000.0;  # c for Potts model for esmooth
 label_counter = 0
 image_height = -1
 image_width = -1
@@ -163,7 +163,7 @@ def get_seed_pixel_labels(pixels_sorted_by_rows_and_cols):
 def main():
     # write it in a new format
     # iio.imwrite("g4g.jpg", img)
-    iterations = 10
+    iterations = 5
     img = cv2.imread("mqdefault.jpg")
     rows, cols, _ = img.shape
     global image_height
