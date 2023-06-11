@@ -23,8 +23,13 @@ def e_smooth_function(iterator_label, label_to_compare):  # using the potts mode
     else:
         return c
 
+def get_board_for_label(label, msg_boards):
+    for board in msg_boards:
+        if(label.label == board.label.label):
+            return board
+
 def calculate_min_energy_and_assign_msgsums_to_all_boards_for_pixel(pixels_sorted_by_rows_and_cols, pixel, all_labels, msg_boards):   #todo: have this function return a tuple of (min_energy, new_msg_sum_for_pixel)
-    energy_for_label = -1.0
+    #energy_for_label = -1.0
     adjacent_pixels = get_5x5_window(pixels_sorted_by_rows_and_cols, pixel, False)
     temp = []
     for p in adjacent_pixels:
@@ -36,7 +41,7 @@ def calculate_min_energy_and_assign_msgsums_to_all_boards_for_pixel(pixels_sorte
         msg_sum_for_curr_label = 0.0
         edata_cost = e_data_function(pixel, board.label)
 
-        if pixel.label == None: #initialization
+        if pixel.label is None: #initialization
             for p in adjacent_pixels:
                 msg_vals_of_curr_pixel_for_each_label = []
                 for h in all_labels:
@@ -53,23 +58,24 @@ def calculate_min_energy_and_assign_msgsums_to_all_boards_for_pixel(pixels_sorte
             for p in adjacent_pixels:
                 msg_vals_of_curr_pixel_for_each_label = []
                 for h in all_labels:
-                    val = e_data_function(p, h) + e_smooth_function(h, board.label) + board.past_msg_sum[str(p.x) + "/" + str(p.y)]  #message_sum of messages that the adjacent pixels received in of previous iterations
+                    h_board = get_board_for_label(h, msg_boards)    #race conditions might REALLY fuck me here
+                    val = e_data_function(p, h) + e_smooth_function(h, board.label) + h_board.past_msg_sum[str(p.x) + "/" + str(p.y)]  #message_sum of messages that the adjacent pixels received in of previous iterations
                     msg_vals_of_curr_pixel_for_each_label.append(val)
                 msg_sum_for_curr_label += min(msg_vals_of_curr_pixel_for_each_label)#see 5.39
 
             #edata_combined_with_msgs = (edata_cost + msg_sum_for_curr_label) / 2.0
 
             board.pixel_energy_vals[str(pixel.x) + "/" + str(pixel.y)] = edata_cost + msg_sum_for_curr_label  # update of msg value of current central pixel in msg board for each label
-            board.past_msg_sum[str(pixel.x) + "/" + str(pixel.y)] = msg_sum_for_curr_label
+            board.past_msg_sum[str(pixel.x) + "/" + str(pixel.y)] = msg_sum_for_curr_label  #todo: this might cause race condition or other unpredictable behaviour
 
 
     #todo: either give pixel corresponding label here or outside of function
-    return energy_for_label #todo: placeholder
+    #return energy_for_label #todo: placeholder
 
 def choose_elements(pixels, num_of_labels):
     seed_pixels = []
     for i in range(num_of_labels):
-        rand = int(random.randrange(180))
+        rand = int(random.randrange(image_height))
         sample = random.sample(pixels[rand], 1)[0]
         print(sample)
 
@@ -154,7 +160,7 @@ def get_seed_pixel_labels(pixels_sorted_by_rows_and_cols):
 def main():
     # write it in a new format
     # iio.imwrite("g4g.jpg", img)
-    iterations = 100
+    iterations = 2
     img = cv2.imread("mqdefault.jpg")
     rows, cols, _ = img.shape
     global image_height
@@ -168,8 +174,9 @@ def main():
         curr_row = []
         for j in range(cols):
             k = img[i, j]
+            #print(k)
             #print("row: " + str(i) + " col: " + str(j))
-            curr_pixel = BPA_pixel(None, j, i, int(k[0]), int(k[1]), int(k[2]), None)
+            curr_pixel = BPA_pixel(None, j, i, int(k[0]), int(k[1]), int(k[2]))
             curr_row.append(curr_pixel)
         pixels_sorted_by_rows_and_cols.append(curr_row)
 
@@ -182,30 +189,69 @@ def main():
         print(vars(label))
         msg_boards.append(Message_board(label, pixels_sorted_by_rows_and_cols))   #todo: not sure if correct but i initialize all cost with just the lowest edata value since no labels have been set before initialization and therefore no esmooth value can be calculated right?
 
-    for pixel in pixels_sorted_by_rows_and_cols: # initializiation; iteration 0
+    for i in range(iterations):
+        for sublist in pixels_sorted_by_rows_and_cols:
+            for pixel in sublist:
+                #todo: dont forget to save results of energy computation in msg board and assign label with smallest energy to pixel
+                calculate_min_energy_and_assign_msgsums_to_all_boards_for_pixel(pixels_sorted_by_rows_and_cols, pixel, all_labels, msg_boards)
+
+                smallest_energy = 99999999999999.0
+                best_label = -1
+                for board in msg_boards:
+                    if board.pixel_energy_vals[str(pixel.x) + "/" + str(pixel.y)] < smallest_energy:
+                        smallest_energy = board.pixel_energy_vals[str(pixel.x) + "/" + str(pixel.y)]
+                        best_label = board.label.label
+                pixel.label = best_label
+                #print(str(best_label.label))
+        print(i)
+
+    red = [255, 0, 0]
+    green = [0, 255, 0]
+    blue = [0,0,255]
+    purple = [255, 0, 230]
+    white = [255, 255, 255]
+    black = [0,0,0]
+    l_blue = [0, 255, 255]
+    yellow = [255, 255, 0]
+    gray = [192, 192, 192]
+    d_green = [0, 25, 51]
 
 
-        #todo: dont forget to save results of energy computation in msg board and assign label with smallest energy to pixel
+    segmented_image_data = []
+    for sublist in pixels_sorted_by_rows_and_cols:
+        pixel_row = []
+        for pixel in sublist:
+            color = []
+            if(pixel.label == 0):
+                color = red
+            elif(pixel.label == 1):
+                color = green
+            elif(pixel.label == 2):
+                color = blue
+            elif(pixel.label == 3):
+                color = purple
+            elif(pixel.label == 4):
+                color = white
+            elif(pixel.label == 5):
+                color = d_green
+            elif(pixel.label == 6):
+                color = l_blue
+            elif(pixel.label == 7):
+                color = yellow
+            elif(pixel.label == 8):
+                color = gray
+            elif(pixel.label == 9):
+                color = black
+            pixel_row.append(color)
+        segmented_image_data.append(pixel_row)
 
-
-
-        min_energy_and_new_msg_sum = calculate_min_energy_and_assign_msgsums_to_all_boards_for_pixel(pixels_sorted_by_rows_and_cols, pixel, all_labels, msg_boards)
-
-
-
-        smallest_energy = 99999999999999.0
-        best_label = -1
-        for board in msg_boards:
-            if board.pixel_energy_vals[str(pixel.x)+ "/" + str(pixel.y)] < smallest_energy:
-                smallest_energy = board.pixel_energy_vals[str(pixel.x)+ "/" + str(pixel.y)]
-                best_label = board.label
-        pixel.label = best_label
-
-
-    #for i in iterations:
-
-
-
+    print(segmented_image_data)
+    nmpy_array = np.array(segmented_image_data, dtype=np.uint8)
+    #print("beginnig")
+    #print(img)
+    #print("beginnig my array")
+    #print(nmpy_array)
+    iio.imwrite('result.jpg', nmpy_array)
 
 if __name__ == "__main__":
     main()

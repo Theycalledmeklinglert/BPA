@@ -132,8 +132,10 @@ class Message_board:
     def __init__(self, label, pixels_sorted_by_rows_and_cols):
         self.label = label
         self.pixel_energy_vals = {}
-        for pixel in pixels_sorted_by_rows_and_cols:
-            self.pixel_energy_vals[str(pixel.x)+ "/" + str(pixel.y)] = 0.0
+        for sublist in pixels_sorted_by_rows_and_cols:
+            for pixel in sublist:
+                self.pixel_energy_vals[str(pixel.x) + "/" + str(pixel.y)] = 0.0
         self.past_msg_sum = {}
-        for pixel in pixels_sorted_by_rows_and_cols:
-            self.past_msg_sum[str(pixel.x)+ "/" + str(pixel.y)] = 0.0
+        for sublist in pixels_sorted_by_rows_and_cols:
+            for pixel in sublist:
+                self.past_msg_sum[str(pixel.x) + "/" + str(pixel.y)] = 0.0
