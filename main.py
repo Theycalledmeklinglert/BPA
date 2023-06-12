@@ -7,13 +7,14 @@ import cv2
 
 from data_structs import *
 
-c = 1000000.0;  # c for Potts model for esmooth
+c = 1000.0;  # c for Potts model for esmooth
 label_counter = 0
 image_height = -1
 image_width = -1
 
 def e_data_function(pixel, label):  # using the L2-norm
-    result = (label.x_mean - pixel.x) ** 2.0 + (label.y_mean - pixel.y) ** 2.0 + (label.r_mean - pixel.r) ** 2.0 + (
+   #(label.x_mean - pixel.x) ** 2.0 + (label.y_mean - pixel.y) ** 2.0 +
+    result = (label.r_mean - pixel.r) ** 2.0 + (
             label.g_mean - pixel.g) ** 2.0 + (label.b_mean - pixel.b) ** 2.0
     return result
 
