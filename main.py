@@ -14,7 +14,7 @@ image_width = -1
 
 def e_data_function(pixel, label):  # using the L2-norm
    #(label.x_mean - pixel.x) ** 2.0 + (label.y_mean - pixel.y) ** 2.0 + #add or remove this if you want to add/remove spatial relations of pixel
-    result = (label.r_mean - pixel.r) ** 2.0 + (
+    result = ( (label.x_mean - pixel.x) ** 2.0 + (label.y_mean - pixel.y) ** 2.0 ) + (label.r_mean - pixel.r) ** 2.0 + (      #todo: experiment with * 5.0
             label.g_mean - pixel.g) ** 2.0 + (label.b_mean - pixel.b) ** 2.0
     return result
 
@@ -135,16 +135,16 @@ def calculate_5x5_label(outer_list, label, seed_pixel):
     print("After calculate_means_and_std_dev: " + str(vars(label)))
     return label
 
-def get_seed_pixel_labels(pixels_sorted_by_rows_and_cols):
+def get_seed_pixel_labels(pixels_sorted_by_rows_and_cols, num_of_labels):
     elems_with_max_variance = []
     curr_best_variance = 0.0
     labels = []
     global label_counter
-    for i in range(10):
+    for i in range(num_of_labels):
         labels.append(Label(label_counter, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
         label_counter += 1
     #for i in range(100):
-    chosen_elements = choose_elements(pixels_sorted_by_rows_and_cols, 10)       # get 5x5 neighbourhood of all chosen pixels using index
+    chosen_elements = choose_elements(pixels_sorted_by_rows_and_cols, num_of_labels)       # get 5x5 neighbourhood of all chosen pixels using index
 
 
     for i in range(len(chosen_elements)):
@@ -164,7 +164,8 @@ def get_seed_pixel_labels(pixels_sorted_by_rows_and_cols):
 def main():
     # write it in a new format
     # iio.imwrite("g4g.jpg", img)
-    iterations = 7
+    iterations = 5
+    num_of_labels = 7
     img = cv2.imread("mqdefault.jpg")
     rows, cols, _ = img.shape
     global image_height
@@ -186,7 +187,7 @@ def main():
 
     # print(len(pixels))
     # print(len(pixels_sorted_by_rows_and_cols))
-    all_labels = get_seed_pixel_labels(pixels_sorted_by_rows_and_cols) #todo: This whole function is very likely very stupid and very wrong but i dont know how else you would calculate it so the "maximum variance" can be achieved
+    all_labels = get_seed_pixel_labels(pixels_sorted_by_rows_and_cols, num_of_labels) #10#todo: This whole function is very likely very stupid and very wrong but i dont know how else you would calculate it so the "maximum variance" can be achieved
     print(len(all_labels))
     msg_boards = []
     for label in all_labels:
