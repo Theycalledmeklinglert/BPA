@@ -14,7 +14,7 @@ image_width = -1
 
 def e_data_function(pixel, label):  # using the L2-norm
    #(label.x_mean - pixel.x) ** 2.0 + (label.y_mean - pixel.y) ** 2.0 + #add or remove this if you want to add/remove spatial relations of pixel
-    result = ( (label.x_mean - pixel.x) ** 2.0 + (label.y_mean - pixel.y) ** 2.0 ) + (label.r_mean - pixel.r) ** 2.0 + (      #todo: experiment with * 5.0
+    result = (label.r_mean - pixel.r) ** 2.0 + (      #todo: try with L1 norm instead of L2
             label.g_mean - pixel.g) ** 2.0 + (label.b_mean - pixel.b) ** 2.0
     return result
 
@@ -53,7 +53,7 @@ def calculate_min_energy_and_assign_msgsums_to_all_boards_for_pixel(pixels_sorte
             #min_msg_vals_of_adjacent_pixels_of_all_labels.append( (board.label.label, msg_sum_for_curr_label) ) #msg_sum for label current label l
 
             board.pixel_energy_vals[str(pixel.x) + "/" + str(pixel.y)] = edata_cost + msg_sum_for_curr_label    #update of msg value of current central pixel in msg board for each label
-            board.past_msg_sum[str(pixel.x) + "/" + str(pixel.y)] = msg_sum_for_curr_label  #todo: this might cause race condition or other unpredictable behaviour
+            board.past_msg_sum[str(pixel.x) + "/" + str(pixel.y)] = msg_sum_for_curr_label
 
         else:
             for p in adjacent_pixels:
@@ -164,9 +164,11 @@ def get_seed_pixel_labels(pixels_sorted_by_rows_and_cols, num_of_labels):
 def main():
     # write it in a new format
     # iio.imwrite("g4g.jpg", img)
-    iterations = 5
-    num_of_labels = 7
-    img = cv2.imread("mqdefault.jpg")
+    iterations = 2
+    num_of_labels = 10  #todo: try 35 for segmented_spring
+    #img = cv2.imread("mqdefault.jpg")
+    #img = cv2.imread("spring.png")
+    img = cv2.imread("mean_shift_spring.png")
     rows, cols, _ = img.shape
     global image_height
     global image_width
