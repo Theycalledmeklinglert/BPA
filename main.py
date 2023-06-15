@@ -7,7 +7,7 @@ import cv2
 
 from data_structs import *
 
-c = 100000.0  # c for Potts model for esmooth
+c = 1000.0  # c for Potts model for esmooth
 label_counter = 0
 image_height = -1
 image_width = -1
@@ -164,8 +164,8 @@ def get_seed_pixel_labels(pixels_sorted_by_rows_and_cols, num_of_labels):
 def main():
     # write it in a new format
     # iio.imwrite("g4g.jpg", img)
-    iterations = 2
-    num_of_labels = 10  #todo: try 35 for segmented_spring
+    iterations = 4
+    num_of_labels = 15  #todo: try 35 for segmented_spring
     #img = cv2.imread("mqdefault.jpg")
     #img = cv2.imread("spring.png")
     img = cv2.imread("mean_shift_spring.png")
@@ -222,6 +222,13 @@ def main():
     yellow = [255, 255, 0]
     gray = [192, 192, 192]
     d_green = [0, 25, 51]
+    c1 = [180, 255, 0]
+    c2 = [180, 180, 180]
+    c3= [70, 70, 70]
+    c4= [150, 150, 150]
+    c5= [220, 220, 220]
+
+
 
     segmented_image_data = []
     for sublist in pixels_sorted_by_rows_and_cols:
@@ -248,6 +255,16 @@ def main():
                 color = gray
             elif(pixel.label == 9):
                 color = black
+            elif(pixel.label == 10):
+                color = c1
+            elif (pixel.label == 11):
+                color = c2
+            elif (pixel.label == 12):
+                color = c3
+            elif (pixel.label == 13):
+                color = c4
+            elif (pixel.label == 14):
+                color = c5
             elif(pixel.label is None):
                 print("Pixel: " + str(pixel.x) + "/" + str(pixel.y))
                 raise Exception("Some Pixel had no label")
