@@ -13,9 +13,9 @@ image_height = -1
 image_width = -1
 
 def e_data_function(pixel, label):  # using the L2-norm
-   #(label.x_mean - pixel.x) ** 2.0 + (label.y_mean - pixel.y) ** 2.0 + #add or remove this if you want to add/remove spatial relations of pixel
-    result = (label.r_mean - pixel.r) ** 2.0 + (      #todo: try with L1 norm instead of L2
-            label.g_mean - pixel.g) ** 2.0 + (label.b_mean - pixel.b) ** 2.0
+   #(label.x_mean - pixel.x) ** 2.0 + (label.y_mean - pixel.y) ** 2.0 +
+    result = math.sqrt( ( label.r_mean - pixel.r) ** 2.0 + (      #todo: try with L1 norm instead of L2
+            label.g_mean - pixel.g) ** 2.0 + (label.b_mean - pixel.b) ** 2.0) **2.0
     return result
 
 def e_smooth_function(iterator_label, label_to_compare):  # using the potts model
@@ -29,7 +29,7 @@ def get_board_for_label(label, msg_boards):
         if(label.label == board.label.label):
             return board
 
-def calculate_min_energy_and_assign_msgsums_to_all_boards_for_pixel(pixels_sorted_by_rows_and_cols, pixel, all_labels, msg_boards):   #todo: have this function return a tuple of (min_energy, new_msg_sum_for_pixel)
+def calculate_min_energy_and_assign_msgsums_to_all_boards_for_pixel(pixels_sorted_by_rows_and_cols, pixel, all_labels, msg_boards):
     #energy_for_label = -1.0
     adjacent_pixels = get_5x5_window(pixels_sorted_by_rows_and_cols, pixel, False)
     temp = []
@@ -69,12 +69,9 @@ def calculate_min_energy_and_assign_msgsums_to_all_boards_for_pixel(pixels_sorte
             #edata_combined_with_msgs = (edata_cost + msg_sum_for_curr_label) / 2.0
 
             #todo: experimental change
+            #todo: Check ob 2.0 weggelassen werden kann
             board.pixel_energy_vals[str(pixel.x) + "/" + str(pixel.y)] = (edata_cost + msg_sum_for_curr_label) / 2.0  # update of msg value of current central pixel in msg board for each label
-            board.past_msg_sum[str(pixel.x) + "/" + str(pixel.y)] = msg_sum_for_curr_label  #todo: this might cause race condition or other unpredictable behaviour
-
-
-    #todo: either give pixel corresponding label here or outside of function
-    #return energy_for_label #todo: placeholder
+            board.past_msg_sum[str(pixel.x) + "/" + str(pixel.y)] = msg_sum_for_curr_label
 
 def choose_elements(pixels, num_of_labels):
     seed_pixels = []
@@ -146,24 +143,11 @@ def get_seed_pixel_labels(pixels_sorted_by_rows_and_cols, num_of_labels):
     #for i in range(100):
     chosen_elements = choose_elements(pixels_sorted_by_rows_and_cols, num_of_labels)       # get 5x5 neighbourhood of all chosen pixels using index
 
-
     for i in range(len(chosen_elements)):
         labels[i] = calculate_5x5_label(pixels_sorted_by_rows_and_cols, labels[i], chosen_elements[i])    #maximisation of variance not yet implemented here
-
-        # curr_variance = result_pixel.x + result_pixel.y + result_pixel.r + result_pixel.g + result_pixel.b + result_pixel.mean + result_pixel.standard_deviation
-        # if curr_variance > curr_best_variance:
-        #     print("CHANGED!")
-        #     print("Old: " + str(curr_best_variance) + " new: " + str(curr_variance))
-        #     curr_best_variance = curr_variance
-        #     elems_with_max_variance = chosen_elements
-        #     print("CHANGED!")
-
-    #return elems_with_max_variance
     return labels
 
 def main():
-    # write it in a new format
-    # iio.imwrite("g4g.jpg", img)
     iterations = 4
     num_of_labels = 15  #todo: try 35 for segmented_spring
     #img = cv2.imread("mqdefault.jpg")
@@ -189,17 +173,16 @@ def main():
 
     # print(len(pixels))
     # print(len(pixels_sorted_by_rows_and_cols))
-    all_labels = get_seed_pixel_labels(pixels_sorted_by_rows_and_cols, num_of_labels) #10#todo: This whole function is very likely very stupid and very wrong but i dont know how else you would calculate it so the "maximum variance" can be achieved
+    all_labels = get_seed_pixel_labels(pixels_sorted_by_rows_and_cols, num_of_labels) #10#todo: maximum variance
     print(len(all_labels))
     msg_boards = []
     for label in all_labels:
         print(vars(label))
-        msg_boards.append(Message_board(label, pixels_sorted_by_rows_and_cols))   #todo: not sure if correct but i initialize all cost with just the lowest edata value since no labels have been set before initialization and therefore no esmooth value can be calculated right?
+        msg_boards.append(Message_board(label, pixels_sorted_by_rows_and_cols))
 
     for i in range(iterations):
         for sublist in pixels_sorted_by_rows_and_cols:
             for pixel in sublist:
-                #todo: dont forget to save results of energy computation in msg board and assign label with smallest energy to pixel
                 calculate_min_energy_and_assign_msgsums_to_all_boards_for_pixel(pixels_sorted_by_rows_and_cols, pixel, all_labels, msg_boards)
 
                 smallest_energy = 1.7976931348623157e+308
@@ -227,8 +210,6 @@ def main():
     c3= [70, 70, 70]
     c4= [150, 150, 150]
     c5= [220, 220, 220]
-
-
 
     segmented_image_data = []
     for sublist in pixels_sorted_by_rows_and_cols:
