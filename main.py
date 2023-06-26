@@ -13,13 +13,15 @@ image_height = -1
 image_width = -1
 
 def e_data_function(pixel, label):  # using the L2-norm
-   #(label.x_mean - pixel.x) ** 2.0 + (label.y_mean - pixel.y) ** 2.0 +
-    result = math.sqrt( ( label.r_mean - pixel.r) ** 2.0 + (      #todo: try with L1 norm instead of L2
-            label.g_mean - pixel.g) ** 2.0 + (label.b_mean - pixel.b) ** 2.0) **2.0
+    #result = math.sqrt( ( label.r_mean - pixel.r) ** 2.0 + (      # L2 norm
+            #label.g_mean - pixel.g) ** 2.0 + (label.b_mean - pixel.b) ** 2.0) **2.0
+
+    result = abs(label.r_mean - pixel.r)  + abs(  # L1 norm
+        label.g_mean - pixel.g) + abs(label.b_mean - pixel.b)
     return result
 
 def e_smooth_function(iterator_label, label_to_compare):  # using the potts model
-    if iterator_label.label == label_to_compare.label:  # might have to subtract features of each label here but will see if this works for now
+    if iterator_label.label == label_to_compare.label:
         return 0
     else:
         return c
@@ -30,7 +32,6 @@ def get_board_for_label(label, msg_boards):
             return board
 
 def calculate_min_energy_and_assign_msgsums_to_all_boards_for_pixel(pixels_sorted_by_rows_and_cols, pixel, all_labels, msg_boards):
-    #energy_for_label = -1.0
     adjacent_pixels = get_5x5_window(pixels_sorted_by_rows_and_cols, pixel, False)
     temp = []
     for p in adjacent_pixels:
@@ -42,16 +43,13 @@ def calculate_min_energy_and_assign_msgsums_to_all_boards_for_pixel(pixels_sorte
         msg_sum_for_curr_label = 0.0
         edata_cost = e_data_function(pixel, board.label)
 
-        if pixel.label is None: #initialization
+        if pixel.label is None: #initialization step
             for p in adjacent_pixels:
                 msg_vals_of_curr_pixel_for_each_label = []
                 for h in all_labels:
                     val = e_data_function(p, h) + e_smooth_function(h, board.label)
                     msg_vals_of_curr_pixel_for_each_label.append(val)
                 msg_sum_for_curr_label += min(msg_vals_of_curr_pixel_for_each_label)#see 5.39
-
-            #min_msg_vals_of_adjacent_pixels_of_all_labels.append( (board.label.label, msg_sum_for_curr_label) ) #msg_sum for label current label l
-
             board.pixel_energy_vals[str(pixel.x) + "/" + str(pixel.y)] = edata_cost + msg_sum_for_curr_label    #update of msg value of current central pixel in msg board for each label
             board.past_msg_sum[str(pixel.x) + "/" + str(pixel.y)] = msg_sum_for_curr_label
 
@@ -59,21 +57,16 @@ def calculate_min_energy_and_assign_msgsums_to_all_boards_for_pixel(pixels_sorte
             for p in adjacent_pixels:
                 msg_vals_of_curr_pixel_for_each_label = []
                 for h in all_labels:
-                    h_board = get_board_for_label(h, msg_boards)    #"race conditions" might REALLY fuck me here
+                    h_board = get_board_for_label(h, msg_boards)
                     val = e_data_function(p, h) + e_smooth_function(h, board.label) + h_board.past_msg_sum[str(p.x) + "/" + str(p.y)]  #message_sum of messages that the adjacent pixels received in of previous iterations
                     msg_vals_of_curr_pixel_for_each_label.append(val)
                 msg_sum_for_curr_label += min(msg_vals_of_curr_pixel_for_each_label)#see 5.39
 
             msg_sum_for_curr_label /= len(adjacent_pixels)+1 #todo:experimental change
-
-            #edata_combined_with_msgs = (edata_cost + msg_sum_for_curr_label) / 2.0
-
-            #todo: experimental change
-            #todo: Check ob 2.0 weggelassen werden kann
-            board.pixel_energy_vals[str(pixel.x) + "/" + str(pixel.y)] = (edata_cost + msg_sum_for_curr_label) / 2.0  # update of msg value of current central pixel in msg board for each label
+            board.pixel_energy_vals[str(pixel.x) + "/" + str(pixel.y)] = (edata_cost + msg_sum_for_curr_label) #update of msg value of current central pixel in msg board for each label
             board.past_msg_sum[str(pixel.x) + "/" + str(pixel.y)] = msg_sum_for_curr_label
 
-def choose_elements(pixels, num_of_labels):
+def choose_seed_pixels(pixels, num_of_labels):
     seed_pixels = []
     for i in range(num_of_labels):
         rand = int(random.randrange(image_height))
@@ -90,9 +83,6 @@ def get_5x5_window(outer_list, pixel, flag):
         adjacent_pixels.append(pixel)
     pixel_index = pixel.x
     sublist_index = pixel.y
-    # print("subindex: " + str(sublist_index) + " y_val: " + str(pixel.y))
-    # print(sublist)
-    # print("pixel_index: " + str(pixel_index) + " x_val: " + str(pixel.x))
 
     if (sublist_index >= 1):                #the two pixels above current seed pixel
         adjacent_pixels.append(outer_list[sublist_index-1][pixel_index])
@@ -112,13 +102,27 @@ def get_5x5_window(outer_list, pixel, flag):
     if (pixel_index < image_width-2 and flag):     #the two pixels to the right of seed pixel
         adjacent_pixels.append(outer_list[sublist_index][pixel_index+2])
 
+
+    if (pixel_index < image_width - 1 and sublist_index < image_height - 1 and flag):
+        adjacent_pixels.append(outer_list[sublist_index + 1][pixel_index + 1])
+    if (pixel_index < image_width - 2 and sublist_index < image_height - 2 and flag):
+        adjacent_pixels.append(outer_list[sublist_index + 2][pixel_index + 2])
+    if (pixel_index >= 1 and sublist_index < image_height - 1 and flag):
+        adjacent_pixels.append(outer_list[sublist_index + 1][pixel_index - 1])
+    if (pixel_index >= 2 and sublist_index < image_height - 2 and flag):
+        adjacent_pixels.append(outer_list[sublist_index + 2][pixel_index - 2])
+
+    if (pixel_index < image_width - 1 and sublist_index >= 1 and flag):
+        adjacent_pixels.append(outer_list[sublist_index - 1][pixel_index + 1])
+    if (pixel_index < image_width - 2 and sublist_index >= 2 and flag):
+        adjacent_pixels.append(outer_list[sublist_index - 2][pixel_index + 2])
+    if (pixel_index >= 1 and sublist_index >= 1 and flag):
+        adjacent_pixels.append(outer_list[sublist_index - 1][pixel_index - 1])
+    if (pixel_index >= 2 and sublist_index >= 2 and flag):
+        adjacent_pixels.append(outer_list[sublist_index - 2][pixel_index - 2])
+
         print("Seed Pixel: " + str(pixel.x) + "/" + str(
             pixel.y))
-        print("Pixel 1 over seed pixel: " + str(outer_list[sublist_index - 1][pixel_index].x) + "/" + str(
-            outer_list[sublist_index - 1][pixel_index].y))
-        print("Pixel 2 over seed pixel: " + str(outer_list[sublist_index - 2][pixel_index].x) + "/" + str(
-            outer_list[sublist_index - 2][pixel_index].y))
-
     return adjacent_pixels
 
 def calculate_5x5_label(outer_list, label, seed_pixel):
@@ -133,23 +137,20 @@ def calculate_5x5_label(outer_list, label, seed_pixel):
     return label
 
 def get_seed_pixel_labels(pixels_sorted_by_rows_and_cols, num_of_labels):
-    elems_with_max_variance = []
-    curr_best_variance = 0.0
     labels = []
     global label_counter
     for i in range(num_of_labels):
         labels.append(Label(label_counter, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
         label_counter += 1
-    #for i in range(100):
-    chosen_elements = choose_elements(pixels_sorted_by_rows_and_cols, num_of_labels)       # get 5x5 neighbourhood of all chosen pixels using index
+    seed_pixels = choose_seed_pixels(pixels_sorted_by_rows_and_cols, num_of_labels)       # get 5x5 neighbourhood of all chosen pixels using index
 
-    for i in range(len(chosen_elements)):
-        labels[i] = calculate_5x5_label(pixels_sorted_by_rows_and_cols, labels[i], chosen_elements[i])    #maximisation of variance not yet implemented here
+    for i in range(len(seed_pixels)):
+        labels[i] = calculate_5x5_label(pixels_sorted_by_rows_and_cols, labels[i], seed_pixels[i])
     return labels
 
 def main():
-    iterations = 4
-    num_of_labels = 15  #todo: try 35 for segmented_spring
+    iterations = 1
+    num_of_labels = 15
     #img = cv2.imread("mqdefault.jpg")
     #img = cv2.imread("spring.png")
     img = cv2.imread("mean_shift_spring.png")
@@ -165,15 +166,11 @@ def main():
         curr_row = []
         for j in range(cols):
             k = img[i, j]
-            #print(k)
-            #print("row: " + str(i) + " col: " + str(j))
             curr_pixel = BPA_pixel(None, j, i, int(k[0]), int(k[1]), int(k[2]))
             curr_row.append(curr_pixel)
         pixels_sorted_by_rows_and_cols.append(curr_row)
 
-    # print(len(pixels))
-    # print(len(pixels_sorted_by_rows_and_cols))
-    all_labels = get_seed_pixel_labels(pixels_sorted_by_rows_and_cols, num_of_labels) #10#todo: maximum variance
+    all_labels = get_seed_pixel_labels(pixels_sorted_by_rows_and_cols, num_of_labels) #10#
     print(len(all_labels))
     msg_boards = []
     for label in all_labels:
@@ -184,7 +181,6 @@ def main():
         for sublist in pixels_sorted_by_rows_and_cols:
             for pixel in sublist:
                 calculate_min_energy_and_assign_msgsums_to_all_boards_for_pixel(pixels_sorted_by_rows_and_cols, pixel, all_labels, msg_boards)
-
                 smallest_energy = 1.7976931348623157e+308
                 best_label = None
                 for board in msg_boards:
@@ -192,7 +188,6 @@ def main():
                         smallest_energy = board.pixel_energy_vals[str(pixel.x) + "/" + str(pixel.y)]
                         best_label = board.label.label
                 pixel.label = best_label
-                #print(str(best_label.label))
         print(i)
 
     red = [255, 0, 0]
@@ -256,10 +251,6 @@ def main():
     print(len(img))
     print(len(segmented_image_data))
     nmpy_array = np.array(segmented_image_data, dtype=np.uint8)
-    #print("beginnig")
-    #print(img)
-    #print("beginnig my array")
-    #print(nmpy_array)
     iio.imwrite('result.jpg', nmpy_array)
 
 if __name__ == "__main__":
