@@ -1,13 +1,10 @@
-import math
 import random
-
 import imageio as iio
 import numpy as np
 import cv2
-
 from data_structs import *
 
-c = 1000.0  # c for Potts model for esmooth
+c = 10.0  # c for Potts model for esmooth
 label_counter = 0
 image_height = -1
 image_width = -1
@@ -102,7 +99,7 @@ def get_5x5_window(outer_list, pixel, flag):
     if (pixel_index < image_width-2 and flag):     #the two pixels to the right of seed pixel
         adjacent_pixels.append(outer_list[sublist_index][pixel_index+2])
 
-
+    # diagonal pixels
     if (pixel_index < image_width - 1 and sublist_index < image_height - 1 and flag):
         adjacent_pixels.append(outer_list[sublist_index + 1][pixel_index + 1])
     if (pixel_index < image_width - 2 and sublist_index < image_height - 2 and flag):
@@ -149,7 +146,7 @@ def get_seed_pixel_labels(pixels_sorted_by_rows_and_cols, num_of_labels):
     return labels
 
 def main():
-    iterations = 1
+    iterations = 2
     num_of_labels = 15
     #img = cv2.imread("mqdefault.jpg")
     #img = cv2.imread("spring.png")
@@ -187,6 +184,7 @@ def main():
                     if board.pixel_energy_vals[str(pixel.x) + "/" + str(pixel.y)] < smallest_energy:
                         smallest_energy = board.pixel_energy_vals[str(pixel.x) + "/" + str(pixel.y)]
                         best_label = board.label.label
+
                 pixel.label = best_label
         print(i)
 
