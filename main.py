@@ -59,7 +59,7 @@ def calculate_min_energy_and_assign_msgsums_to_all_boards_for_pixel(pixels_sorte
                     msg_vals_of_curr_pixel_for_each_label.append(val)
                 msg_sum_for_curr_label += min(msg_vals_of_curr_pixel_for_each_label)#see 5.39
 
-            msg_sum_for_curr_label /= len(adjacent_pixels)+1 #todo:experimental change
+            msg_sum_for_curr_label /= len(adjacent_pixels)+1
             board.pixel_energy_vals[str(pixel.x) + "/" + str(pixel.y)] = (edata_cost + msg_sum_for_curr_label) #update of msg value of current central pixel in msg board for each label
             board.past_msg_sum[str(pixel.x) + "/" + str(pixel.y)] = msg_sum_for_curr_label
 
@@ -146,7 +146,7 @@ def get_seed_pixel_labels(pixels_sorted_by_rows_and_cols, num_of_labels):
     return labels
 
 def main():
-    iterations = 2
+    iterations = 1
     num_of_labels = 15
     #img = cv2.imread("mqdefault.jpg")
     #img = cv2.imread("spring.png")
